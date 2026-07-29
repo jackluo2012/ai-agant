@@ -1,10 +1,11 @@
 # Chapter 2: 本地 LLM 工具调用演示
 
-本目录包含本地大语言模型（LLM）工具调用的完整实现和示例。
+本目录包含本地大语言模型（LLM）工具调用的完整实现和示例，以及 Agent 状态栏增强系统。
 
 ## 📋 目录
 
 - [功能概述](#功能概述)
+- [项目列表](#项目列表)
 - [系统架构](#系统架构)
 - [环境准备](#环境准备)
 - [快速开始](#快速开始)
@@ -16,13 +17,81 @@
 
 ## 🎯 功能概述
 
-本项目演示如何在本地 LLM 上实现类似 OpenAI 的工具调用（Tool Calling）功能，支持：
+本目录包含两个主要项目：
+
+### 1. 本地 LLM 工具调用演示
+
+演示如何在本地 LLM 上实现类似 OpenAI 的工具调用（Tool Calling）功能：
 
 - **🔧 工具调用**：让 LLM 能够调用外部工具获取实时信息
 - **💬 流式响应**：实时流式输出 AI 的思考过程和响应
 - **🌐 多后端支持**：支持 llama.cpp（Ollama）和 vLLM 两种后端
 - **🚀 跨平台**：自动检测并选择最佳后端（Linux GPU → vLLM，其他 → Ollama）
 - **📦 多种工具**：天气查询、时间查询、货币转换、代码解释器等
+
+### 2. Agent 状态栏增强系统
+
+实现 Agent 状态栏（Agent Status Bar）技术，改善 Agent 的执行轨迹管理：
+
+- **⏰ 时间戳跟踪**：帮助理解时序关系
+- **🔢 工具调用计数**：防止无限循环，实现成本感知
+- **📋 TODO 列表管理**：任务进度跟踪和状态管理
+- **❗ 详细错误信息**：提供针对性的错误修复建议
+- **💻 系统状态感知**：当前工作目录、系统信息等
+
+## 📁 项目列表
+
+| 项目 | 目录 | 说明 |
+|------|------|------|
+| 本地 LLM 工具调用 | `local_llm_serving/` | 本地 LLM 工具调用演示 |
+| Agent 状态栏 | `agent-status-bar/` | Agent 状态栏增强系统 |
+| 注意力可视化 | `attention_visualization/` | LLM 注意力机制可视化 |
+
+## 🚀 快速开始
+
+### Agent 状态栏增强系统
+
+```bash
+# 进入目录
+cd agent-status-bar
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 配置 API 密钥
+export KIMI_API_KEY='your-api-key-here'
+
+# 离线预览状态栏效果（无需 API 密钥）
+python main.py --mode preview
+
+# 执行单个任务
+python main.py --mode single --task "分析当前项目结构"
+
+# 交互模式
+python main.py --mode interactive
+
+# 功能演示
+python main.py --mode demo
+```
+
+**详细文档**：请查看 [agent-status-bar/README.md](agent-status-bar/README.md)
+
+### 本地 LLM 工具调用演示
+
+```bash
+cd local_llm_serving
+
+# 激活虚拟环境
+source ../.venv/bin/activate
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 运行（自动检测最佳后端）
+python main.py
+```
+
+**详细文档**：继续阅读本文档
 
 ## 🏗️ 系统架构
 
