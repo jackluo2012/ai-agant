@@ -352,6 +352,129 @@ pytest>=7.0.0
 
 ---
 
+---
+
+## 代码迁移规范
+
+### 迁移检查清单
+
+当从外部项目迁移代码到 ai-agant 项目时，必须完成以下步骤：
+
+#### 1. LLM 客户端迁移
+
+**必须做：**
+```python
+# ❌ 删除原有的 LLM 客户端初始化
+# from openai import OpenAI
+# self.client = OpenAI(api_key=..., base_url=...)
+
+# ✅ 改用统一客户端
+from llm.client import get_llm_client
+self.client = get_llm_client()
+self.model = self.client.model_name
+```
+
+#### 2. 配置文件迁移
+
+**必须做：**
+- 删除独立的 `.env` 文件
+- 删除独立的 `config.py` 中的 LLM 配置
+- 使用根目录的 `.env` 和 `llm.client`
+
+**可以保留：**
+- 实验特定配置（如 `MAX_ITERATIONS`、`CONTEXT_WINDOW_SIZE`）
+- 章节特定环境变量（使用前缀，如 `CHAPTER3_*`）
+
+#### 3. 中文化要求
+
+**必须中文化：**
+- 所有用户可见的提示词（system prompt）
+- 所有用户可见的消息输出
+- 所有注释和文档字符串
+- README.md 文档
+
+**示例：**
+```python
+# ❌ 英文提示词
+prompt = "Summarize the following content..."
+
+# ✅ 中文提示词
+prompt = "请总结以下内容..."
+```
+
+#### 4. 文档要求
+
+**必须创建：**
+- `README.md` - 包含以下内容：
+  - 项目概述
+  - 安装说明
+  - 使用方法
+  - 配置说明
+  - 实验结果（如适用）
+  - 技术要点
+
+**推荐包含：**
+- 策略/方法对比表格
+- 故障排除指南
+- 扩展开发指南
+
+#### 5. 目录结构
+
+**标准结构：**
+```
+chapterN/
+└── project_name/
+    ├── README.md           # 必须
+    ├── requirements.txt    # 如有额外依赖
+    ├── config.py           # 仅含非 LLM 配置
+    ├── agent.py            # 主要代码
+    ├── main.py             # 交互入口
+    ├── experiment.py       # 实验脚本（如适用）
+    ├── results/            # 结果输出目录
+    └── logs/               # 日志目录
+```
+
+#### 6. 依赖管理
+
+**requirements.txt：**
+```txt
+# 核心依赖由根目录提供，此处仅列出实验特定依赖
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+```
+
+**不要重复列出：**
+- `openai` - 由根目录统一管理
+- `python-dotenv` - 由根目录统一管理
+
+### 迁移验证清单
+
+迁移完成后，验证以下内容：
+
+- [ ] 使用 `from llm.client import get_llm_client` 获取 LLM 客户端
+- [ ] 删除了所有硬编码的 API 密钥和端点
+- [ ] 所有提示词已中文化
+- [ ] 所有注释已中文化
+- [ ] README.md 包含完整文档
+- [ ] 代码遵循命名规范
+- [ ] 创建了必要的输出目录（results/, logs/）
+
+### 快速迁移命令
+
+```bash
+# 1. 创建目录
+mkdir -p chapterN/project_name
+mkdir -p chapterN/project_name/{results,logs}
+
+# 2. 迁移代码后，修改导入
+# 将 from openai import OpenAI 改为 from llm.client import get_llm_client
+
+# 3. 验证
+python -m chapterN.project_name.main --help
+```
+
+---
+
 ## 总结
 
 遵循本规范可以：
@@ -360,5 +483,6 @@ pytest>=7.0.0
 2. ✅ 减少重复工作
 3. ✅ 便于协作维护
 4. ✅ 提高代码质量
+5. ✅ 简化代码迁移
 
 **核心原则：** 复用优先，DRY（Don't Repeat Yourself），KISS（Keep It Simple, Stupid）。

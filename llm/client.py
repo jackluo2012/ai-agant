@@ -15,6 +15,12 @@ import os
 import logging
 from typing import Optional, Dict, Any
 from openai import OpenAI
+from dotenv import load_dotenv
+
+# 加载项目根目录的 .env 文件
+_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_env_path = os.path.join(_project_root, '.env')
+load_dotenv(_env_path)
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
