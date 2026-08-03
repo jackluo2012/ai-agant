@@ -1,0 +1,20 @@
+# 用户记忆系统依赖
+# 核心依赖（openai, python-dotenv）由根目录统一管理
+
+# 日志和工具
+colorama>=0.4.6
+rich>=13.0.0
+pyyaml>=6.0.0
+pydantic>=2.0.0
+
+# Dify 集成（向量搜索）
+requests>=2.31.0
+
+# 可选：高级嵌入搜索（如果不使用 Dify）
+# sentence-transformers>=2.2.2
+# numpy>=1.24.0
+# faiss-cpu>=1.7.4
+
+# 开发依赖
+pytest>=7.4.0
+pytest-asyncio>=0.21.0

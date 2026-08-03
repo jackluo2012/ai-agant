@@ -447,10 +447,171 @@ lxml>=5.0.0
 - `openai` - 由根目录统一管理
 - `python-dotenv` - 由根目录统一管理
 
+### 完整迁移步骤
+
+当从外部项目迁移代码到 ai-agant 项目时，按照以下步骤进行：
+
+#### 第一步：准备和复制
+
+```bash
+# 1. 创建目标目录结构
+mkdir -p chapterN/project_name/{results,logs,data}
+
+# 2. 复制所有源文件
+cp -r /path/to/source/project/* chapterN/project_name/
+```
+
+#### 第二步：添加路径处理（**重要**）
+
+在每个需要导入 `llm.client` 的文件开头，添加以下代码：
+
+```python
+import sys
+import os
+
+# 添加项目根目录到路径
+_project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
+# 添加当前目录到路径
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+if _current_dir not in sys.path:
+    sys.path.insert(0, _current_dir)
+
+try:
+    from llm.client import get_llm_client
+except ImportError:
+    get_llm_client = None
+```
+
+**为什么需要这样做：**
+- 项目运行在虚拟环境 `.venv` 中
+- 需要将项目根目录添加到 Python 路径
+- 确保能找到 `llm` 模块
+
+#### 第三步：修改 LLM 客户端初始化
+
+**必须修改的文件类型：**
+- 对话代理类（conversational_agent.py, agent.py 等）
+- 后台处理器类（background_memory_processor.py 等）
+- 主入口文件（main.py, quickstart.py 等）
+
+**修改方式：**
+
+```python
+# ❌ 删除原有方式
+from openai import OpenAI
+self.client = OpenAI(api_key=api_key, base_url=base_url)
+
+# ✅ 改用统一客户端
+self.client = get_llm_client(provider=provider, model=model)
+self.model = self.client.model_name
+```
+
+**参数调整：**
+- 删除所有 `api_key` 参数
+- 保留 `provider` 和 `model` 参数（可选，默认使用项目配置）
+
+#### 第四步：清理配置文件
+
+**修改 config.py：**
+- 删除 LLM 提供商相关的所有配置
+- 删除 `get_api_key()` 方法
+- 删除 `validate()` 方法中的 API key 验证
+- 删除 `PROVIDER_DEFAULT_MODELS` 等常量
+- 仅保留项目特定配置（如记忆模式、超时等）
+
+#### 第五步：中文化内容
+
+**必须中文化的内容：**
+1. 所有用户可见的提示词（system prompt）
+2. 工具描述（tool descriptions）
+3. 例子中的英文内容（人名、公司名、地点等）
+4. 用户可见的消息输出
+
+**示例修改：**
+
+```python
+# ❌ 英文提示词
+prompt = "You are a helpful assistant..."
+
+# ✅ 中文提示词
+prompt = "你是一个有用的助手..."
+
+# ❌ 英文例子
+"User works at TechCorp as John Smith..."
+
+# ✅ 中文例子
+"用户在腾讯公司担任张三..."
+```
+
+#### 第六步：更新入口文件
+
+**修改 main.py 等入口文件：**
+- 删除 `Config.get_api_key()` 调用
+- 删除 `Config.validate()` 调用
+- 删除 API key 相关的错误提示
+
+#### 第七步：更新依赖文件
+
+**修改 requirements.txt：**
+```txt
+# 核心依赖由根目录提供，此处仅列出实验特定依赖
+# 删除：openai, python-dotenv
+```
+
+#### 第八步：更新文档
+
+**README.md 必须包含：**
+- 项目概述
+- 安装说明（强调项目根目录 .env 配置）
+- 使用方法
+- API 使用示例（删除 api_key 参数）
+- 迁移说明
+
+#### 第九步：语法验证
+
+```bash
+# 验证 Python 语法
+python3 -m py_compile chapterN/project_name/*.py
+```
+
+#### 第十步：运行验证
+
+**虚拟环境位置：** `.venv/`（项目根目录）
+
+**正确运行方式：**
+
+```bash
+# 方式一：从项目根目录运行（推荐）
+cd ai-agant
+source .venv/bin/activate
+python3 chapter3/user-memory/quickstart.py
+
+# 方式二：使用完整路径
+cd ai-agant
+source .venv/bin/activate
+python3 chapter3/project_name/main.py --mode interactive
+
+# 方式三：添加根目录到 PYTHONPATH
+cd ai-agant
+export PYTHONPATH=$PYTHONPATH:$(pwd)
+source .venv/bin/activate
+cd chapter3/project_name
+python3 quickstart.py
+```
+
+**注意：**
+- 必须先激活虚拟环境
+- 建议从项目根目录运行，使用完整路径
+- 或在代码中添加路径处理（见第二步）
+
 ### 迁移验证清单
 
 迁移完成后，验证以下内容：
 
+- [ ] 在需要导入 `llm.client` 的文件中添加了路径处理代码
 - [ ] 使用 `from llm.client import get_llm_client` 获取 LLM 客户端
 - [ ] 删除了所有硬编码的 API 密钥和端点
 - [ ] 所有提示词已中文化
@@ -458,6 +619,7 @@ lxml>=5.0.0
 - [ ] README.md 包含完整文档
 - [ ] 代码遵循命名规范
 - [ ] 创建了必要的输出目录（results/, logs/）
+- [ ] 在虚拟环境中能正常运行
 
 ### 快速迁移命令
 
@@ -466,11 +628,16 @@ lxml>=5.0.0
 mkdir -p chapterN/project_name
 mkdir -p chapterN/project_name/{results,logs}
 
-# 2. 迁移代码后，修改导入
-# 将 from openai import OpenAI 改为 from llm.client import get_llm_client
+# 2. 迁移代码后，在每个导入 llm.client 的文件中添加路径处理
+# 见第二步的代码模板
 
-# 3. 验证
-python -m chapterN.project_name.main --help
+# 3. 验证语法
+python3 -m py_compile chapterN/project_name/*.py
+
+# 4. 激活虚拟环境并测试
+cd ai-agant
+source .venv/bin/activate
+python3 chapterN/project_name/main.py --help
 ```
 
 ---
