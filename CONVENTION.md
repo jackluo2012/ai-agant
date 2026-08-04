@@ -356,6 +356,51 @@ pytest>=7.0.0
 
 ## 代码迁移规范
 
+### 📌 迁移定义（核心规范）
+
+**当提示"迁移"时，特指以下操作：**
+
+将 `ai-agent-book/`（源目录）中的相关章节/项目代码，迁移到 `ai-agant/`（目标目录）对应的目录中。
+
+#### 目录对应关系
+
+```
+/home/jackluo/my/ai-agent/
+├── ai-agent-book/          ← 源目录（只读参考）
+│   ├── chapter1/
+│   ├── chapter2/
+│   ├── chapter3/
+│   ├── ...
+│   └── chapter10/
+│
+└── ai-agant/                ← 目标目录（开发工作区）
+    ├── chapter1/
+    ├── chapter2/
+    ├── chapter3/
+    ├── ...
+    └── chapter10/
+```
+
+#### 快速迁移命令模板
+
+```bash
+# 从 ai-agent-book 迁移到 ai-agant
+cp -r ../ai-agent-book/chapterN/xxx-project ./chapterN/
+
+# 或者使用 rsync（保留权限和时间戳）
+rsync -av ../ai-agent-book/chapterN/xxx-project ./chapterN/
+```
+
+#### 迁移工作流程
+
+1. **识别源代码位置**：在 `ai-agent-book/chapterN/` 中找到需要迁移的项目
+2. **创建目标目录**：在 `ai-agant/chapterN/` 中创建对应目录
+3. **复制代码**：使用上述命令复制源代码
+4. **应用迁移规范**：按照下方检查清单进行代码适配
+5. **验证运行**：确保代码在目标环境中正常运行
+
+---
+
 ### 迁移检查清单
 
 当从外部项目迁移代码到 ai-agant 项目时，必须完成以下步骤：
@@ -659,17 +704,17 @@ LLM_MODEL=qwen3.7-max-2026-05-20
 BASE_URL=https://your-endpoint.com/v1
 ```
 
-#### 2. 小模型配置（Ollama，可选）
+#### 2. 小模型配置（llama.cpp）
 
-本地小模型通过 Ollama 提供，配置示例：
+本地小模型通过 llama.cpp 提供，项目当前配置：
 
 ```bash
-# 在 .env 中配置
-API_KEY=ollama
-LLM_PROVIDER=custom
-LLM_MODEL=qwen3:0.6b
-BASE_URL=http://localhost:11434/v1
+# llama.cpp 服务器配置（硬编码，用于快速切换）
+服务器地址: 192.168.1.158:11434
+模型: MiniCPM5-1B-Q4_K_M.gguf
 ```
+
+**注意：** 小模型配置直接写在代码中（agent.py），通过 `--small-model` 参数切换。
 
 ### 代码迁移时的模型处理规范
 
@@ -690,6 +735,9 @@ def __init__(self):
 # 不要硬编码模型或提供商
 self.client = OpenAI(api_key="xxx", base_url="xxx")
 self.model = "gpt-4o"  # 硬编码
+
+# 不要要求用户指定 --provider（.env 已配置）
+parser.add_argument('--provider', type=str)
 ```
 
 ### 双模式支持规范
@@ -700,32 +748,30 @@ self.model = "gpt-4o"  # 硬编码
 def __init__(self, use_small_model: bool = False):
     """
     Args:
-        use_small_model: 是否使用小模型（Ollama）
+        use_small_model: 是否使用小模型（llama.cpp）
                        False=使用 .env 配置的模型（默认）
-                       True=尝试使用本地小模型
+                       True=使用 llama.cpp 小模型
     """
     if use_small_model:
-        # 尝试使用小模型，失败则回退
-        try:
-            self.client = get_llm_client(
-                provider="custom",
-                model="qwen3:0.6b",
-                base_url="http://localhost:11434/v1"
-            )
-        except:
-            self.client = get_llm_client()  # 回退到 .env 配置
+        # 使用 llama.cpp 小模型
+        self.client = get_llm_client(
+            provider="custom",
+            model="MiniCPM5-1B-Q4_K_M.gguf",
+            base_url="http://192.168.1.158:11434/v1"
+        )
     else:
-        self.client = get_llm_client()  # 直接使用 .env 配置
+        # 使用 .env 配置的模型
+        self.client = get_llm_client()
 ```
 
 ### 命令行参数规范
 
-**不要要求用户指定 `--provider` 或 `--model`**，因为 `.env` 已配置。
+**核心原则：** `.env` 已配置，用户不需要重复指定。
 
 ```python
 # ✅ 正确
 parser.add_argument('--small-model', action='store_true',
-    help='使用本地小模型（Ollama）')
+    help='使用本地小模型（llama.cpp）')
 
 # ❌ 错误（.env 已配置，不需要再指定）
 parser.add_argument('--provider', type=str)
@@ -737,6 +783,29 @@ parser.add_argument('--model', type=str)
 在 README 中说明：
 
 1. 项目自动读取 `.env` 配置，无需额外参数
+2. 大模型和小模型的配置方式
+3. 使用示例不需要 `--provider` 或 `--model`
+
+```markdown
+## 用法
+
+# 使用 .env 配置的模型（自动读取）
+python main.py --mode llm
+
+# 使用本地小模型
+python main.py --mode llm --small-model
+```
+
+### 迁移检查清单
+
+从外部项目迁移代码时，确保：
+
+- [ ] 删除硬编码的 API 密钥和端点
+- [ ] 删除 `--provider` 和 `--model` 参数
+- [ ] 添加 `--small-model` 参数（如需支持小模型）
+- [ ] 代码自动读取 `.env` 配置
+- [ ] 所有提示词已中文化
+- [ ] README 说明自动配置读取
 2. 如需使用小模型，修改 `.env` 中的配置并启动 Ollama
 3. 示例命令不要包含 `--provider` 或 `--model`
 
