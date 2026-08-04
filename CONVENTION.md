@@ -642,6 +642,116 @@ python3 chapterN/project_name/main.py --help
 
 ---
 
+## 迁移规范补充（重要）
+
+### LLM 模型配置规范
+
+项目支持两种模型配置方式：
+
+#### 1. 大模型配置（默认）
+
+在项目根目录 `.env` 中配置云端 LLM 服务：
+
+```bash
+API_KEY=your_api_key
+LLM_PROVIDER=aliyun          # 或 kimi, openai, deepseek 等
+LLM_MODEL=qwen3.7-max-2026-05-20
+BASE_URL=https://your-endpoint.com/v1
+```
+
+#### 2. 小模型配置（Ollama，可选）
+
+本地小模型通过 Ollama 提供，配置示例：
+
+```bash
+# 在 .env 中配置
+API_KEY=ollama
+LLM_PROVIDER=custom
+LLM_MODEL=qwen3:0.6b
+BASE_URL=http://localhost:11434/v1
+```
+
+### 代码迁移时的模型处理规范
+
+#### ✅ 正确做法
+
+```python
+# 自动读取 .env 配置（推荐）
+from llm.client import get_llm_client
+
+def __init__(self):
+    self.client = get_llm_client()  # 自动读取 .env
+    self.model = self.client.model_name
+```
+
+#### ❌ 错误做法
+
+```python
+# 不要硬编码模型或提供商
+self.client = OpenAI(api_key="xxx", base_url="xxx")
+self.model = "gpt-4o"  # 硬编码
+```
+
+### 双模式支持规范
+
+当功能需要同时支持大模型和小模型时：
+
+```python
+def __init__(self, use_small_model: bool = False):
+    """
+    Args:
+        use_small_model: 是否使用小模型（Ollama）
+                       False=使用 .env 配置的模型（默认）
+                       True=尝试使用本地小模型
+    """
+    if use_small_model:
+        # 尝试使用小模型，失败则回退
+        try:
+            self.client = get_llm_client(
+                provider="custom",
+                model="qwen3:0.6b",
+                base_url="http://localhost:11434/v1"
+            )
+        except:
+            self.client = get_llm_client()  # 回退到 .env 配置
+    else:
+        self.client = get_llm_client()  # 直接使用 .env 配置
+```
+
+### 命令行参数规范
+
+**不要要求用户指定 `--provider` 或 `--model`**，因为 `.env` 已配置。
+
+```python
+# ✅ 正确
+parser.add_argument('--small-model', action='store_true',
+    help='使用本地小模型（Ollama）')
+
+# ❌ 错误（.env 已配置，不需要再指定）
+parser.add_argument('--provider', type=str)
+parser.add_argument('--model', type=str)
+```
+
+### README 规范
+
+在 README 中说明：
+
+1. 项目自动读取 `.env` 配置，无需额外参数
+2. 如需使用小模型，修改 `.env` 中的配置并启动 Ollama
+3. 示例命令不要包含 `--provider` 或 `--model`
+
+```markdown
+## 用法
+
+# 使用 .env 配置的模型（自动读取）
+python main.py --mode llm
+
+# 使用本地小模型（需要 Ollama）
+python main.py --mode llm --small-model
+```
+
+---
+
 ## 总结
 
 遵循本规范可以：

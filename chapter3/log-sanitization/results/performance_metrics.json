@@ -1,0 +1,18 @@
+[
+  {
+    "test_id": "demo",
+    "conversation_id": "demo_001",
+    "input_text_length": 312,
+    "input_tokens": 183,
+    "prefill_time_ms": 54455.24870604277,
+    "output_time_ms": 1936.8685929803178,
+    "total_time_ms": 56392.117299023084,
+    "output_tokens": 30,
+    "prefill_speed_tps": 3.360557601855061,
+    "output_speed_tps": 15.488918612613828,
+    "pii_items_found": 5,
+    "replacements_made": 5,
+    "sanitized_text_length": 300,
+    "timestamp": "2026-08-03T18:28:27.421185"
+  }
+]

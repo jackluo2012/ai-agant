@@ -1,0 +1,70 @@
+{
+  "total_conversations": 1,
+  "timestamp": "2026-08-03T18:28:27.421892",
+  "timing_metrics": {
+    "prefill_time_ms": {
+      "min": 54455.24870604277,
+      "max": 54455.24870604277,
+      "mean": 54455.24870604277,
+      "median": 54455.24870604277
+    },
+    "output_time_ms": {
+      "min": 1936.8685929803178,
+      "max": 1936.8685929803178,
+      "mean": 1936.8685929803178,
+      "median": 1936.8685929803178
+    },
+    "total_time_ms": {
+      "min": 56392.117299023084,
+      "max": 56392.117299023084,
+      "mean": 56392.117299023084,
+      "median": 56392.117299023084
+    }
+  },
+  "token_metrics": {
+    "input_tokens": {
+      "min": 183,
+      "max": 183,
+      "mean": 183.0,
+      "median": 183
+    },
+    "output_tokens": {
+      "min": 30,
+      "max": 30,
+      "mean": 30.0,
+      "median": 30
+    },
+    "total_input_tokens": 183,
+    "total_output_tokens": 30
+  },
+  "speed_metrics": {
+    "prefill_speed_tps": {
+      "min": 3.360557601855061,
+      "max": 3.360557601855061,
+      "mean": 3.360557601855061,
+      "median": 3.360557601855061
+    },
+    "output_speed_tps": {
+      "min": 15.488918612613828,
+      "max": 15.488918612613828,
+      "mean": 15.488918612613828,
+      "median": 15.488918612613828
+    }
+  },
+  "sanitization_metrics": {
+    "pii_items_found": {
+      "min": 5,
+      "max": 5,
+      "mean": 5.0,
+      "median": 5
+    },
+    "replacements_made": {
+      "min": 5,
+      "max": 5,
+      "mean": 5.0,
+      "median": 5
+    },
+    "total_pii_found": 5,
+    "total_replacements": 5
+  }
+}
