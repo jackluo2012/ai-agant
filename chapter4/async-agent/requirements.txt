@@ -1,0 +1,12 @@
+# Flux 异步 Agent 运行时 - 项目依赖
+#
+# 注意：以下核心依赖由项目根目录的虚拟环境提供
+# - openai (LLM 调用)
+# - python-dotenv (环境变量加载)
+#
+# 如需安装依赖，请在项目根目录执行：
+# source .venv/bin/activate
+# pip install openai>=1.30.0 python-dotenv>=1.0.0
+
+# 本项目无额外特定依赖
+# 所有核心功能均由 Python 标准库（asyncio）和根目录依赖提供
