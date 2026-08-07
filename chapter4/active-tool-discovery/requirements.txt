@@ -1,0 +1,5 @@
+# 核心依赖由项目根目录提供（见根目录 requirements.txt）
+# 本文件仅列出本实验特定依赖
+
+# Token 统计（用于计算注入 token 数）
+tiktoken>=0.5.0
