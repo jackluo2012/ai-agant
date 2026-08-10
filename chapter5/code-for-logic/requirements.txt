@@ -1,0 +1,5 @@
+# 实验特定依赖
+# LLM 客户端由项目根目录提供，此处仅列出本实验特定依赖
+
+# python-constraint：约束满足问题求解库
+python-constraint>=1.4.0
