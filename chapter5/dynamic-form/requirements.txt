@@ -1,0 +1,5 @@
+# 核心依赖由项目根目录提供，此处仅列出项目特定依赖
+# LLM 相关依赖（openai、python-dotenv 等）已在根目录 requirements.txt 中
+
+# HTML 解析
+beautifulsoup4>=4.12
