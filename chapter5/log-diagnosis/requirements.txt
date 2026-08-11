@@ -1,0 +1,3 @@
+# 核心 LLM 依赖由项目根目录提供，此处仅列出项目特定依赖
+# 仅 --create-issue（真实经 MCP 创建 GitHub Issue）时需要；mock/自检不需要
+mcp>=1.0.0
