@@ -1,0 +1,175 @@
+"""实验 5-11：对话式界面定制 Agent。
+
+职责：接收一条自然语言 UI 定制需求（如"把发送按钮改成蓝色"），读取前端源码，
+调用 LLM 让模型定位并改写相应源文件（颜色 / 字体 / 文案 / 布局 / 组件）。
+
+设计要点
+--------
+- 只暴露少量"可定制文件"给模型（frontend/src 下的 App.jsx 与 theme.css），
+  降低模型改错文件的概率，也让改动可控、可验证。
+- 通过 function calling 的 `apply_edits` 工具，让模型返回"要整体改写的文件全文"。
+  相比零散的 search/replace，整文件改写对小文件更稳定、更少破坏语法。
+- 修改前先把原文件内容快照下来，改后可计算 diff、读回断言，并跑构建验证。
+"""
+
+import os
+import sys
+import json
+from pathlib import Path
+
+# 添加项目根目录到路径，以便导入 llm.client
+_project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
+# 添加当前目录到路径
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+if _current_dir not in sys.path:
+    sys.path.insert(0, _current_dir)
+
+from llm.client import get_llm_client
+
+
+# 可被 Agent 定制的前端源文件（相对 frontend/ 的路径）。
+EDITABLE_FILES = [
+    "src/App.jsx",
+    "src/theme.css",
+]
+
+
+def build_client_and_model():
+    """构建 LLM 客户端并返回客户端和模型名。
+
+    使用项目统一的 LLM 配置（从项目根目录 .env 读取）。
+
+    Returns:
+        tuple: (LLM 客户端实例, 模型名称)
+    """
+    client = get_llm_client()
+    model = client.model_name
+    return client, model
+
+
+APPLY_EDITS_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "apply_edits",
+        "description": (
+            "根据用户的界面定制需求，改写一个或多个前端源文件。"
+            "只返回真正需要改动的文件；每个文件返回改写后的完整内容。"
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "summary": {
+                    "type": "string",
+                    "description": "用一句话说明本次改了什么（中文）。",
+                },
+                "files": {
+                    "type": "array",
+                    "description": "需要改写的文件列表。",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "path": {
+                                "type": "string",
+                                "description": "相对 frontend/ 的文件路径，"
+                                "必须是可编辑文件之一。",
+                            },
+                            "content": {
+                                "type": "string",
+                                "description": "改写后的文件完整内容。",
+                            },
+                        },
+                        "required": ["path", "content"],
+                    },
+                },
+            },
+            "required": ["summary", "files"],
+        },
+    },
+}
+
+
+SYSTEM_PROMPT = """你是一个前端界面定制 Agent，负责把用户的自然语言 UI 需求落到 React(Vite) 源码上。
+
+规则：
+1. 只能修改用户提供的"可编辑文件"，不要新增或删除文件。
+2. 优先做最小改动：改颜色/字体/间距等样式，改 theme.css；改文案/组件结构，改 App.jsx。
+3. 颜色请使用明确的 CSS 颜色值（如十六进制 #2563eb）。如果用户给了具体色值，就用它。
+4. 保持代码可编译：JSX/CSS 语法必须正确，不要破坏原有功能。
+5. 必须调用 apply_edits 工具返回结果，files 里给出改写后的完整文件内容。
+"""
+
+
+def read_editable_sources(frontend_dir: Path) -> dict:
+    """读取所有可编辑文件当前内容。
+
+    Args:
+        frontend_dir: 前端目录路径
+
+    Returns:
+        字典，键为相对路径，值为文件内容
+    """
+    sources = {}
+    for rel in EDITABLE_FILES:
+        p = frontend_dir / rel
+        sources[rel] = p.read_text(encoding="utf-8")
+    return sources
+
+
+def customize(client, model, frontend_dir: Path, requirement: str) -> dict:
+    """让模型针对一条自然语言需求改写源码。
+
+    Args:
+        client: LLM 客户端
+        model: 模型名称
+        frontend_dir: 前端目录路径
+        requirement: 用户的自然语言定制需求
+
+    Returns:
+        apply_edits 工具的参数字典，包含 summary 和 files
+
+    Raises:
+        RuntimeError: 当模型没有返回 apply_edits 工具调用时
+    """
+    sources = read_editable_sources(frontend_dir)
+
+    file_blocks = "\n\n".join(
+        f"===== 文件: {rel} =====\n{content}" for rel, content in sources.items()
+    )
+    user_prompt = (
+        f"可编辑文件当前内容如下：\n\n{file_blocks}\n\n"
+        f"用户的定制需求：{requirement}\n\n"
+        f"请调用 apply_edits 返回需要改写的文件全文。"
+    )
+
+    resp = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ],
+        tools=[APPLY_EDITS_TOOL],
+        tool_choice={"type": "function", "function": {"name": "apply_edits"}},
+        temperature=0.7,
+    )
+
+    msg = resp.choices[0].message
+    if not msg.tool_calls:
+        raise RuntimeError("模型没有返回 apply_edits 工具调用。")
+    raw_args = msg.tool_calls[0].function.arguments or "{}"
+    try:
+        args = json.loads(raw_args)
+    except json.JSONDecodeError:
+        # 容错处理：如果 JSON 解析失败，返回空编辑
+        args = {}
+
+    # 安全校验：只允许改写白名单内的文件。
+    files = [f for f in (args.get("files") or []) if isinstance(f, dict)]
+    for f in files:
+        path = f.get("path")
+        if path not in EDITABLE_FILES:
+            raise RuntimeError(f"模型试图修改非白名单文件：{path}")
+    args["files"] = files
+    return args

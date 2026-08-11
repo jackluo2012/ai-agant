@@ -1,0 +1,4 @@
+# 后端 + Agent/演示脚本依赖
+# LLM 相关依赖由项目根目录提供，此处仅列出实验特定依赖
+fastapi>=0.110
+uvicorn[standard]>=0.27
