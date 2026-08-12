@@ -1,0 +1,7 @@
+# Agent Creator 实验特定依赖
+#
+# 核心依赖（openai>=1.30.0, python-dotenv>=1.0.0）由项目根目录 requirements.txt 提供
+# 本文件仅列出本实验所需的特定依赖
+
+# 测试框架
+pytest>=7.0.0
