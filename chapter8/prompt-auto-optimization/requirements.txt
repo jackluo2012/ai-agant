@@ -1,0 +1,4 @@
+# 核心 LLM 依赖由项目根目录提供，此处仅列出项目特定依赖
+# 项目根目录已包含: openai, python-dotenv, anthropic 等
+
+# 无额外依赖
