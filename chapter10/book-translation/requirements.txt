@@ -1,0 +1,6 @@
+# 核心依赖（openai、python-dotenv、tiktoken）由项目根目录 .venv 统一提供，
+# 此处仅列出本实验特有的依赖。当前无额外依赖。
+
+# 说明：agents.py 使用 tiktoken 做离线 token 统计，
+# 根目录虚拟环境已安装；如需单独补装可执行：
+#   pip install "tiktoken>=0.7.0"

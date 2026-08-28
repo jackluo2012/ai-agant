@@ -1,0 +1,6 @@
+.env
+output/
+results/
+logs/
+__pycache__/
+*.pyc
