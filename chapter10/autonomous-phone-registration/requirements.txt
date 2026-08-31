@@ -1,0 +1,19 @@
+# 核心依赖（openai、python-dotenv）由项目根目录的统一 LLM 封装提供，
+# 此处仅列出本实验的特定依赖。
+
+# 浏览器自动化（Computer Use Agent / WebRTC 参与者页面）
+playwright>=1.44.0
+
+# 本机麦克风采集（--phone-transport local 时使用）
+sounddevice>=0.4.6
+numpy>=1.26.0
+
+# 测试
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+
+# 可选旧 PSTN 传输层（--phone-transport twilio 时使用）
+twilio>=9.0.0
+fastapi>=0.111.0
+uvicorn>=0.30.0
+python-multipart>=0.0.9
