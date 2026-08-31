@@ -1,0 +1,8 @@
+# 核心依赖（openai、python-dotenv）由项目根目录统一提供，此处仅列出实验特定依赖
+
+# 真实浏览器自动化
+playwright>=1.44.0
+
+# 测试
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
